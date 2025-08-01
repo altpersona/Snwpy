@@ -1,0 +1,10 @@
+# Core dependencies for NeverWinter Python Tools
+
+# No external dependencies required for basic functionality
+# tkinter is included with Python standard library (for GUI)
+
+# Optional dependencies for enhanced functionality:
+# requests>=2.25.0        # For NWSync network operations
+# cryptography>=3.0.0     # For enhanced security features  
+# Pillow>=8.0.0          # For image processing in ERF files
+# lxml>=4.6.0            # For XML export/import of GFF files
