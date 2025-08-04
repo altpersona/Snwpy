@@ -56,7 +56,11 @@ def erf_unpack(args):
         extracted_count = 0
         for entry in erf.list_entries():
             extension = get_extension(entry.res_type)
-            filename = f"{entry.resref}.{extension}"
+            # Sanitize resref - remove null characters and limit length
+            clean_resref = entry.resref.replace('\x00', '').strip()
+            if not clean_resref:
+                clean_resref = f"entry_{extracted_count}"
+            filename = f"{clean_resref}.{extension}"
             output_path = output_dir / filename
             
             try:

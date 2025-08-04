@@ -6,28 +6,35 @@ Command modules for CLI interface
 from . import (
     nwsync_write,
     nwsync_print,
+    erf_pack,
+    erf_unpack,
+    gff,
+    tlk,
+    twoda,
+    key,
+    resman,
+    script,
 )
 
-# Import placeholders for other commands
+# Import remaining placeholders
 from .placeholders import (
     nwsync_fetch,
     nwsync_prune,
-    erf_pack,
-    erf_unpack,
-    gff_convert,
-    resman_extract,
-    resman_stats,
-    resman_grep,
-    key_pack,
-    key_unpack,
-    tlk_convert,
-    twoda_convert,
-    script_compile
 )
 
 __all__ = [
     'nwsync_write', 'nwsync_print', 'nwsync_fetch', 'nwsync_prune',
-    'erf_pack', 'erf_unpack', 'gff_convert', 'resman_extract',
-    'resman_stats', 'resman_grep', 'key_pack', 'key_unpack',
-    'tlk_convert', 'twoda_convert', 'script_compile'
+    'erf_pack', 'erf_unpack', 'gff', 'tlk', 'twoda', 'key', 'resman', 'script'
 ]
+
+# Available commands mapping
+AVAILABLE_COMMANDS = {
+    'erf': 'ERF archive operations',
+    'gff': 'GFF file operations', 
+    'nwsync': 'NWSync operations',
+    'tlk': 'TLK (Talk Table) operations',
+    'twoda': '2DA (Two-Dimensional Array) operations', 
+    'key': 'KEY file operations',
+    'resman': 'Resource manager operations',
+    'script': 'NWScript compilation operations',
+}

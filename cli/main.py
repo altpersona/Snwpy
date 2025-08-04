@@ -12,10 +12,9 @@ from pathlib import Path
 try:
     from .commands import nwsync_write, nwsync_print
     from .commands import erf_pack, erf_unpack, gff
+    from .commands import tlk, twoda, key, resman, script
     from .commands.placeholders import (
-        nwsync_fetch, nwsync_prune, resman_extract,
-        resman_stats, resman_grep, key_pack, key_unpack,
-        tlk_convert, twoda_convert, script_compile
+        nwsync_fetch, nwsync_prune
     )
 except ImportError as e:
     # Handle import errors gracefully
@@ -86,48 +85,25 @@ def main():
     gff_parser = subparsers.add_parser('gff', help='Convert GFF files')
     gff.setup_parser(gff_parser)
     
-    # Resource manager commands
-    resman_extract.setup_parser(subparsers.add_parser(
-        'resman-extract',
-        help='Extract resources'
-    ))
+    # TLK commands
+    tlk_parser = subparsers.add_parser('tlk', help='TLK operations')
+    tlk.setup_parser(tlk_parser)
     
-    resman_stats.setup_parser(subparsers.add_parser(
-        'resman-stats',
-        help='Show resource statistics'
-    ))
-    
-    resman_grep.setup_parser(subparsers.add_parser(
-        'resman-grep',
-        help='Search resources'
-    ))
+    # 2DA commands  
+    twoda_parser = subparsers.add_parser('twoda', help='2DA operations')
+    twoda.setup_parser(twoda_parser)
     
     # Key file commands
-    key_pack.setup_parser(subparsers.add_parser(
-        'key-pack',
-        help='Pack KEY files'
-    ))
+    key_parser = subparsers.add_parser('key', help='KEY file operations')
+    key.setup_parser(key_parser)
     
-    key_unpack.setup_parser(subparsers.add_parser(
-        'key-unpack',
-        help='Unpack KEY files'
-    ))
+    # Resource manager commands  
+    resman_parser = subparsers.add_parser('resman', help='Resource manager operations')
+    resman.setup_parser(resman_parser)
     
-    # Other format commands
-    tlk_convert.setup_parser(subparsers.add_parser(
-        'tlk',
-        help='Convert TLK files'
-    ))
-    
-    twoda_convert.setup_parser(subparsers.add_parser(
-        'twoda',
-        help='Convert 2DA files'
-    ))
-    
-    script_compile.setup_parser(subparsers.add_parser(
-        'script-compile',
-        help='Compile NWScript'
-    ))
+    # Script commands
+    script_parser = subparsers.add_parser('script', help='NWScript operations')
+    script.setup_parser(script_parser)
     
     # Parse arguments
     args = parser.parse_args()
