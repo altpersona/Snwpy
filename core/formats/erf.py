@@ -12,6 +12,21 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+# Common NWN resource types
+RESOURCE_TYPES = {
+    'bmp': 1, 'tga': 3, 'wav': 4, 'plt': 6, 'ini': 7, 'txt': 10,
+    'mdl': 2002, 'nss': 2009, 'ncs': 2010, 'are': 2012, 'set': 2013,
+    'ifo': 2014, 'bic': 2015, 'wok': 2016, 'utc': 2017, 'utd': 2018,
+    'ute': 2019, 'utg': 2020, 'uti': 2021, 'utm': 2022, 'utp': 2023,
+    'uts': 2024, 'utt': 2025, 'utw': 2026, 'git': 2027, 'gic': 2028,
+    'gff': 2037, 'fac': 2038, 'dlg': 2029, 'itp': 2030, 'bak': 2031,
+    'dat': 2032, 'shd': 2033, 'xbc': 2034, 'wbm': 2035, 'mtr': 2036,
+    'ktx': 2040, 'ttf': 2041, 'sql': 2042, 'tml': 2043, 'sq3': 2044,
+    'lod': 2045, 'gif': 2046, 'png': 2047, 'jpg': 2048, 'caf': 2049,
+    'jui': 9996, 'gui': 9997, 'css': 9998, 'ccs': 9999, 'xml': 10000,
+    'htm': 10001, 'ltr': 10002, 'json': 10004
+}
+
 
 class ErfVersion(Enum):
     """ERF file version"""
