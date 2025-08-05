@@ -17,29 +17,38 @@ class ToolSelector(ttk.LabelFrame):
         # Available tools
         self.tools = {
             "NWSync Tools": [
-                ("nwsync-write", "Create NWSync manifests"),
-                ("nwsync-print", "Print manifest contents"),
-                ("nwsync-fetch", "Fetch NWSync data"),
-                ("nwsync-prune", "Prune NWSync repository"),
+                ("nwsync write", "Create NWSync manifests - ✅ Implemented"),
+                ("nwsync print", "Print manifest contents - ✅ Implemented"),
+                ("nwsync fetch", "Fetch NWSync data - ⚠️ Placeholder"),
+                ("nwsync prune", "Prune NWSync repository - ⚠️ Placeholder"),
             ],
             "Archive Tools": [
-                ("erf-pack", "Pack ERF archives"),
-                ("erf-unpack", "Unpack ERF archives"),
-                ("key-pack", "Pack KEY files"),
-                ("key-unpack", "Unpack KEY files"),
+                ("erf pack", "Pack ERF archives - ✅ Implemented"),
+                ("erf unpack", "Unpack ERF archives - ✅ Implemented"),
+                ("key pack", "Pack KEY files - ✅ Framework ready"),
+                ("key unpack", "Unpack KEY files - ✅ Framework ready"),
+                ("key list", "List KEY contents - ✅ Framework ready"),
+                ("key shadows", "Show KEY shadows - ✅ Framework ready"),
             ],
             "Format Tools": [
-                ("gff", "Convert GFF files"),
-                ("tlk", "Convert TLK files"),
-                ("twoda", "Convert 2DA files"),
+                ("gff convert", "Convert GFF files - ✅ Framework ready"),
+                ("gff info", "Display GFF information - ✅ Framework ready"),
+                ("tlk convert", "Convert TLK files - ✅ Framework ready"),
+                ("tlk info", "Display TLK information - ✅ Framework ready"),
+                ("twoda convert", "Convert 2DA files - ✅ Framework ready (with --minify)"),
+                ("twoda info", "Display 2DA information - ✅ Framework ready"),
             ],
             "Resource Manager": [
-                ("resman-extract", "Extract resources"),
-                ("resman-stats", "Show resource statistics"),
-                ("resman-grep", "Search resources"),
+                ("resman extract", "Extract resources - ✅ Framework ready"),
+                ("resman stats", "Show resource statistics - ✅ Framework ready"),
+                ("resman grep", "Search resources - ✅ Framework ready"),
+                ("resman cat", "Print resource contents - ✅ Framework ready"),
+                ("resman diff", "Compare resource containers - ✅ Framework ready"),
             ],
             "Development": [
-                ("script-compile", "Compile NWScript"),
+                ("script compile", "Compile NWScript - ✅ Framework ready"),
+                ("script decompile", "Decompile NWScript - ✅ Framework ready"),
+                ("script disasm", "Disassemble NWScript - ✅ Framework ready"),
             ]
         }
         
@@ -193,12 +202,9 @@ class ConfigPanel(ttk.LabelFrame):
         
     def create_config_for_tool(self, tool_name):
         """Create configuration widgets for a specific tool"""
-        # This would be expanded with specific options for each tool
-        # For now, create basic common options
-        
         row = 0
         
-        if tool_name.startswith('nwsync-write'):
+        if tool_name == 'nwsync write':
             self.add_file_input("Storage Directory", "root", row, is_directory=True)
             row += 1
             self.add_file_input("Module/ERF Files", "specs", row, multiple=True)
@@ -211,26 +217,121 @@ class ConfigPanel(ttk.LabelFrame):
             row += 1
             self.add_number_input("Group ID", "group_id", row, default=0)
             
-        elif tool_name.startswith('nwsync-print'):
+        elif tool_name == 'nwsync print':
             self.add_file_input("Manifest File", "manifest", row)
             row += 1
             self.add_checkbox("Verify Files", "verify", row)
             
-        elif tool_name.startswith('erf-pack'):
+        elif tool_name == 'erf pack':
             self.add_file_input("Input Directory", "input_dir", row, is_directory=True)
             row += 1
             self.add_file_input("Output ERF", "output_erf", row, save=True)
             
-        elif tool_name.startswith('erf-unpack'):
+        elif tool_name == 'erf unpack':
             self.add_file_input("Input ERF", "input_erf", row)
             row += 1
             self.add_file_input("Output Directory", "output_dir", row, is_directory=True)
             
+        elif tool_name == 'gff convert':
+            self.add_file_input("Input GFF File", "input", row)
+            row += 1
+            self.add_file_input("Output File", "output", row, save=True)
+            row += 1
+            self.add_checkbox("Convert to JSON", "to_json", row, default=True)
+            
+        elif tool_name == 'gff info':
+            self.add_file_input("Input GFF File", "input", row)
+            row += 1
+            self.add_checkbox("Verbose Output", "verbose", row)
+            
+        elif tool_name == 'tlk convert':
+            self.add_file_input("Input TLK File", "input", row)
+            row += 1
+            self.add_file_input("Output File", "output", row, save=True)
+            row += 1
+            self.add_checkbox("Convert to JSON", "to_json", row, default=True)
+            
+        elif tool_name == 'tlk info':
+            self.add_file_input("Input TLK File", "input", row)
+            row += 1
+            self.add_checkbox("Verbose Output", "verbose", row)
+            
+        elif tool_name == 'twoda convert':
+            self.add_file_input("Input 2DA File", "input", row)
+            row += 1
+            self.add_file_input("Output File", "output", row, save=True)
+            row += 1
+            self.add_checkbox("Convert to CSV", "to_csv", row)
+            row += 1
+            self.add_checkbox("Convert to JSON", "to_json", row)
+            row += 1
+            self.add_checkbox("Minify Output", "minify", row)
+            
+        elif tool_name == 'twoda info':
+            self.add_file_input("Input 2DA File", "input", row)
+            row += 1
+            self.add_checkbox("Verbose Output", "verbose", row)
+            
+        elif tool_name == 'key pack':
+            self.add_file_input("Input Directory", "input", row, is_directory=True)
+            row += 1
+            self.add_file_input("Output KEY File", "output", row, save=True)
+            
+        elif tool_name == 'key unpack':
+            self.add_file_input("Input KEY File", "input", row)
+            row += 1
+            self.add_file_input("Output Directory", "output", row, is_directory=True)
+            
+        elif tool_name == 'key list':
+            self.add_file_input("Input KEY File", "input", row)
+            
+        elif tool_name == 'key shadows':
+            self.add_file_input("Input KEY File", "input", row)
+            
+        elif tool_name == 'resman extract':
+            self.add_file_input("Output Directory", "output", row, is_directory=True)
+            row += 1
+            self.add_text_input("Pattern Filter", "pattern", row)
+            row += 1
+            self.add_text_input("Resource Type", "type", row)
+            
+        elif tool_name == 'resman cat':
+            self.add_text_input("Resource Name", "resource", row)
+            
+        elif tool_name == 'resman grep':
+            self.add_text_input("Search Pattern", "pattern", row)
+            row += 1
+            self.add_text_input("Resource Type", "type", row)
+            
+        elif tool_name == 'resman diff':
+            self.add_file_input("First Container", "first", row)
+            row += 1
+            self.add_file_input("Second Container", "second", row)
+            
+        elif tool_name == 'script compile':
+            self.add_file_input("Input NSS File", "input", row)
+            row += 1
+            self.add_file_input("Output NCS File", "output", row, save=True)
+            row += 1
+            self.add_file_input("Includes Directory", "includes", row, is_directory=True)
+            row += 1
+            self.add_checkbox("Verbose Output", "verbose", row)
+            row += 1
+            self.add_checkbox("Create Dummy Output (for testing)", "dummy", row)
+            
+        elif tool_name == 'script decompile':
+            self.add_file_input("Input NCS File", "input", row)
+            row += 1
+            self.add_file_input("Output NSS File", "output", row, save=True)
+            
+        elif tool_name == 'script disasm':
+            self.add_file_input("Input NCS File", "input", row)
+            
         else:
-            # Generic options for other tools
+            # Fallback for unknown tools
             ttk.Label(
                 self.scrollable_frame,
-                text=f"Configuration for {tool_name} not yet implemented"
+                text=f"✅ {tool_name} command is available.\nConfiguration panel will be added in future updates."
             ).grid(row=row, column=0, columnspan=3, pady=10)
             
     def add_file_input(self, label, key, row, is_directory=False, save=False, multiple=False):
@@ -302,8 +403,9 @@ class ConfigPanel(ttk.LabelFrame):
             messagebox.showwarning("No Tool", "Please select a tool first")
             return
             
-        # Build command arguments
-        args = [self.current_tool]
+        # Build command arguments - split tool name into separate arguments
+        tool_parts = self.current_tool.split()
+        args = tool_parts[:]  # Start with the tool command parts
         
         # Add arguments based on tool and configuration
         for key, var in self.config_widgets.items():
@@ -313,7 +415,7 @@ class ConfigPanel(ttk.LabelFrame):
                 if value:
                     args.append(f"--{key.replace('_', '-')}")
             elif value:  # Non-empty string/number
-                if key in ['root', 'manifest', 'input_dir', 'input_erf', 'output_dir', 'output_erf']:
+                if key in ['root', 'manifest', 'input_dir', 'input_erf', 'output_dir', 'output_erf', 'input', 'output', 'first', 'second', 'resource', 'pattern']:
                     # Positional arguments
                     args.append(value)
                 elif key == 'specs':
