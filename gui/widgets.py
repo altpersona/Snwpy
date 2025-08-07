@@ -247,7 +247,7 @@ class ConfigPanel(ttk.LabelFrame):
         elif tool_name == 'tlk convert':
             self.add_file_input("Input TLK File", "input", row)
             row += 1
-            self.add_file_input("Output File", "output", row, save=True)
+            self.add_file_input("Output File (optional)", "output", row, save=True)
             row += 1
             self.add_checkbox("Convert to JSON", "to_json", row, default=True)
             
@@ -402,44 +402,167 @@ class ConfigPanel(ttk.LabelFrame):
         if not self.current_tool:
             messagebox.showwarning("No Tool", "Please select a tool first")
             return
-            
-        # Build command arguments - split tool name into separate arguments
-        tool_parts = self.current_tool.split()
-        args = tool_parts[:]  # Start with the tool command parts
-        
-        # Add arguments based on tool and configuration
-        for key, var in self.config_widgets.items():
-            value = var.get()
-            
-            if isinstance(var, tk.BooleanVar):
-                if value:
-                    args.append(f"--{key.replace('_', '-')}")
-            elif value:  # Non-empty string/number
-                if key in ['root', 'manifest', 'input_dir', 'input_erf', 'output_dir', 'output_erf', 'input', 'output', 'first', 'second', 'resource', 'pattern']:
-                    # Positional arguments
-                    args.append(value)
-                elif key == 'specs':
-                    # Multiple files
-                    if ';' in value:
-                        args.extend(value.split(';'))
+
+        try:
+            # Split the tool into verb and subcommand, e.g. "tlk convert" -> ["tlk", "convert"]
+            tool_parts = self.current_tool.split()
+            args = tool_parts[:]  # Start with the tool command parts
+
+            # Helper to push a named flag with value: --flag value
+            def push_flag(flag_key: str, value: str):
+                args.append(f"--{flag_key.replace('_', '-')}")
+                args.append(value)
+
+            positional_queue = []
+            flag_queue = []
+
+            for key, var in self.config_widgets.items():
+                try:
+                    value = var.get()
+                    if isinstance(var, tk.BooleanVar):
+                        if value:
+                            flag_queue.append((key, True))
+                    elif value:
+                        if key == "specs":
+                            if ';' in value:
+                                for v in value.split(';'):
+                                    positional_queue.append(v)
+                            else:
+                                positional_queue.append(value)
+                        elif key in [
+                            'root', 'manifest',
+                            'input_dir', 'input_erf',
+                            'output_dir', 'output_erf',
+                            'input', 'output',
+                            'first', 'second',
+                            'resource', 'pattern'
+                        ]:
+                            positional_queue.append(value)
+                        else:
+                            flag_queue.append((key, value))
+                except Exception as e:
+                    messagebox.showerror("Error", f"Error getting value for {key}: {str(e)}")
+                    return
+
+            # Special handling and validation for tlk convert
+            if tool_parts == ["tlk", "convert"] or tool_parts == ["tlk"]:
+                # Default subcommand if missing
+                if tool_parts == ["tlk"]:
+                    tool_parts = ["tlk", "convert"]
+                # Extract expected operands
+                input_path = None
+                output_path = None
+                rest_positionals = []
+
+                for v in positional_queue:
+                    if input_path is None:
+                        input_path = v
+                    elif output_path is None:
+                        output_path = v
                     else:
-                        args.append(value)
-                else:
-                    # Named arguments
-                    args.extend([f"--{key.replace('_', '-')}", value])
-        
-        # Execute command
-        if self.on_run_command:
-            self.on_run_command(args)
+                        rest_positionals.append(v)
+
+                # If no input chosen, prompt the user instead of crashing
+                if not input_path:
+                    messagebox.showwarning("Missing input", "Please choose an Input TLK File.")
+                    return
+
+                args = tool_parts[:]
+                args.append(input_path)
+
+                # Output is optional; add only if provided
+                if output_path:
+                    args.extend(["-o", output_path])
+
+                # No extra positionals expected; append none
+                # Add flags
+                for k, v in flag_queue:
+                    if v is True:
+                        args.append(f"--{k.replace('_', '-')}")
+                    else:
+                        push_flag(k, v)
+            else:
+                # Default behavior for other tools: positionals then flags
+                args = tool_parts[:] + positional_queue
+                for k, v in flag_queue:
+                    if v is True:
+                        args.append(f"--{k.replace('_', '-')}")
+                    else:
+                        push_flag(k, v)
+
+            # Ensure we have at least something beyond tool parts
+            if len(args) <= len(tool_parts):
+                messagebox.showwarning("Warning", "No arguments specified. Please configure the command options.")
+                return
+
+            # Execute command via callback
+            if self.on_run_command:
+                self.on_run_command(args)
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error building command: {str(e)}")
             
     def show_help(self):
         """Show help for the current tool"""
         if not self.current_tool:
             messagebox.showinfo("Help", "Please select a tool first")
             return
-            
-        # This would show tool-specific help
-        messagebox.showinfo("Help", f"Help for {self.current_tool} not yet implemented")
+
+        # Display concise, built-in help text to avoid subprocess errors in GUI
+        tool = self.current_tool
+        help_map = {
+            "tlk convert": "tlk convert INPUT [-o OUTPUT] [--to-json]",
+            "tlk info": "tlk info INPUT [--verbose]",
+            "gff convert": "gff convert INPUT [-o OUTPUT] [--to-json]",
+            "gff info": "gff info INPUT [-v|--verbose]",
+            "twoda convert": "twoda convert INPUT [-o OUTPUT] [--to-csv] [--to-json] [--minify]",
+            "twoda info": "twoda info INPUT [--verbose]",
+            "erf pack": "erf pack INPUT_DIR [-o OUTPUT.erf]",
+            "erf unpack": "erf unpack INPUT.erf [-o OUTPUT_DIR]",
+            "key pack": "key pack INPUT_DIR [-o OUTPUT.key]",
+            "key unpack": "key unpack INPUT.key [-o OUTPUT_DIR]",
+            "key list": "key list INPUT.key",
+            "key shadows": "key shadows INPUT.key",
+            "resman extract": "resman extract [-o DIR] [-p PATTERN] [--type TYPE]",
+            "resman grep": "resman grep PATTERN [--type TYPE]",
+            "resman cat": "resman cat NAME.ext",
+            "resman stats": "resman stats",
+            "resman diff": "resman diff FIRST_DIR SECOND_DIR",
+            "script compile": "script compile INPUT.nss [-o OUTPUT.ncs] [-i INCLUDES] [--dummy] [-v]",
+            "script decompile": "script decompile INPUT.ncs [-o OUTPUT.nss]",
+            "script disasm": "script disasm INPUT.ncs",
+            "nwsync write": "nwsync-write ROOT SPEC... [--name NAME] [--description TEXT] [--group-id ID] [--limit-file-size MB] [--with-module] [--dry-run]",
+            "nwsync print": "nwsync-print MANIFEST [--verify] [-r REPO_ROOT]",
+        }
+        text = help_map.get(tool, f"No inline help available for: {tool}")
+        self.show_help_dialog(text)
+
+    def show_help_dialog(self, help_text):
+        """Show help text in a scrollable dialog"""
+        import tkinter as tk
+        
+        help_window = tk.Toplevel(self)
+        help_window.title(f"Help - {self.current_tool}")
+        help_window.geometry("600x400")
+        
+        # Create text widget with scrollbar
+        text_frame = ttk.Frame(help_window)
+        text_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        text_widget = tk.Text(text_frame, wrap=tk.WORD, font=("Consolas", 10))
+        scrollbar = ttk.Scrollbar(text_frame, orient=tk.VERTICAL, command=text_widget.yview)
+        text_widget.configure(yscrollcommand=scrollbar.set)
+        
+        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Insert help text
+        text_widget.insert(tk.END, help_text)
+        text_widget.config(state=tk.DISABLED)
+        
+        # Close button
+        close_btn = ttk.Button(help_window, text="Close", command=help_window.destroy)
+        close_btn.pack(pady=5)
 
 
 class OutputPanel(ttk.LabelFrame):
@@ -474,6 +597,10 @@ class OutputPanel(ttk.LabelFrame):
         # Clear button
         clear_btn = ttk.Button(button_frame, text="Clear", command=self.clear)
         clear_btn.pack(side=tk.RIGHT)
+
+        # Copy All button
+        copy_btn = ttk.Button(button_frame, text="Copy All", command=self.copy_all)
+        copy_btn.pack(side=tk.RIGHT, padx=(0, 5))
         
     def append_text(self, text):
         """Append text to the output"""
@@ -483,3 +610,9 @@ class OutputPanel(ttk.LabelFrame):
     def clear(self):
         """Clear the output"""
         self.text_widget.delete(1.0, tk.END)
+
+    def copy_all(self):
+        """Copy all output to clipboard"""
+        content = self.text_widget.get(1.0, tk.END)
+        self.text_widget.clipboard_clear()
+        self.text_widget.clipboard_append(content)

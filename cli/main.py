@@ -10,9 +10,7 @@ from pathlib import Path
 
 # Import all CLI modules
 try:
-    from .commands import nwsync_write, nwsync_print
-    from .commands import erf_pack, erf_unpack, gff
-    from .commands import tlk, twoda, key, resman, script
+    from .commands import nwsync_write, nwsync_print, gff, tlk, twoda, key, resman, script, erf
     from .commands.placeholders import (
         nwsync_fetch, nwsync_prune
     )
@@ -89,15 +87,19 @@ def main():
     tlk_parser = subparsers.add_parser('tlk', help='TLK operations')
     tlk.setup_parser(tlk_parser)
     
-    # 2DA commands  
+    # 2DA commands
     twoda_parser = subparsers.add_parser('twoda', help='2DA operations')
     twoda.setup_parser(twoda_parser)
     
     # Key file commands
     key_parser = subparsers.add_parser('key', help='KEY file operations')
     key.setup_parser(key_parser)
+
+    # ERF commands
+    erf_parser = subparsers.add_parser('erf', help='ERF archive operations')
+    erf.setup_parser(erf_parser)
     
-    # Resource manager commands  
+    # Resource manager commands
     resman_parser = subparsers.add_parser('resman', help='Resource manager operations')
     resman.setup_parser(resman_parser)
     
@@ -129,7 +131,6 @@ def main():
     else:
         logging.error(f"No function assigned to command: {args.command}")
         logging.debug(f"Available args: {vars(args)}")
-        return 1
         return 1
 
 

@@ -8,8 +8,10 @@ import logging
 from pathlib import Path
 import os
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Ensure package-relative imports work reliably when run as module
+pkg_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+if pkg_root not in sys.path:
+    sys.path.insert(0, pkg_root)
 
 try:
     import tkinter as tk
@@ -18,8 +20,12 @@ except ImportError:
     print("GUI requires tkinter, which is not available")
     sys.exit(1)
 
+# Robust relative imports
 from .widgets import ToolSelector, ConfigPanel, OutputPanel
-from core import __version__
+try:
+    from core import __version__
+except Exception:
+    __version__ = "1.0.0"
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +44,18 @@ class MainWindow:
         
         self.setup_ui()
         self.setup_logging()
+
+        # Install global Tk error handler so UI never closes on exceptions
+        def _report_callback_exception(exc, val, tb):
+            import traceback
+            msg = "".join(traceback.format_exception(exc, val, tb))
+            logger.error("Tk callback exception:\n" + msg)
+            try:
+                messagebox.showerror("Unhandled error", msg)
+                self.output_panel.append_text(msg + "\n")
+            except Exception:
+                pass
+        self.root.report_callback_exception = _report_callback_exception
         
     def setup_ui(self):
         """Setup the user interface"""
@@ -101,33 +119,57 @@ class MainWindow:
         try:
             self.output_panel.clear()
             logger.info(f"Executing: {' '.join(command_args)}")
-            
+
+            # Basic guard: if no args, inform user instead of crashing
+            if not command_args or len(command_args) == 0:
+                logger.error("No command arguments provided.")
+                messagebox.showwarning("Missing arguments", "Please configure the tool before running.")
+                return
+
+            # Auto-insert default subcommands where applicable to avoid CLI errors
+            if command_args[0] == "tlk" and (len(command_args) == 1 or command_args[1] not in ("convert", "info")):
+                command_args = ["tlk", "convert"] + command_args[1:]
+            if command_args[0] == "gff" and (len(command_args) == 1 or command_args[1] not in ("convert", "info")):
+                command_args = ["gff", "convert"] + command_args[1:]
+            if command_args[0] == "twoda" and (len(command_args) == 1 or command_args[1] not in ("convert", "info")):
+                command_args = ["twoda", "convert"] + command_args[1:]
+
+            # Debug: Show the exact command being run
+            debug_msg = f"Debug: Command args = {command_args}"
+            logger.info(debug_msg)
+            print(debug_msg)  # Also print to console
+
             # Import and run the appropriate CLI command
             from cli.main import main as cli_main
-            
+
             # Save original sys.argv
             original_argv = sys.argv[:]
-            
+
             try:
                 # Set argv for the CLI command
                 sys.argv = ['nwpy'] + command_args
-                
+                logger.info(f"Debug: sys.argv = {sys.argv}")
+
                 # Run command
                 result = cli_main()
-                
+
                 if result == 0:
                     logger.info("Command completed successfully")
                 else:
-                    logger.error(f"Command failed with exit code {result}")
-                    
+                    # result may be None if the command raised and was caught inside CLI
+                    logger.error(f"Command failed with exit code {result if result is not None else 'unknown'}")
+
             finally:
                 # Restore original argv
                 sys.argv = original_argv
-                
+
         except Exception as e:
-            logger.error(f"Error executing command: {e}")
+            # Do not crash the GUI; surface the error
             import traceback
-            self.output_panel.append_text(traceback.format_exc())
+            error_msg = f"{e}\n" + traceback.format_exc()
+            logger.error(f"Error executing command: {e}")
+            self.output_panel.append_text(error_msg)
+            messagebox.showerror("Execution error", str(e))
         
     def run(self):
         """Start the GUI main loop"""
